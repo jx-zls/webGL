@@ -1,4 +1,3 @@
-
 var VSHADER_SOURCE =
     ' attribute vec4 a_Position;' +
     ' varying vec4 v_Color;' +
@@ -11,7 +10,7 @@ var VSHADER_SOURCE =
     ' vec3 normal = normalize((u_NormalMatrix * a_Normal).xyz);' +
     ' vec3 lightDirection = normalize(vec3(0.0. 0.5, 0.7));' +
     ' float nDotL = max(dot(normal, lightDirection), 0.0);' +
-    ' v_Color = vec4(color.rgb * nDotL + vec3(0.1), color.a);' +
+    ' v_Color = vec4(color.rgb * nDotL, color.a);' +
     '}';
 
 var FSHADER_SOURCE =
