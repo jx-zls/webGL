@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body onload="initAction()">
+
+<canvas id="webGl" width="400" height="400">
+
+</canvas>
+
+</body>
+
+<script>
+
+    var VSHADER_SOURCE = 'attribute vec4 a_Position;\n' +
+        'uniform mat4 u_xformMatrix;' +
+        'void main() {\n' +
+        '  gl_Position = u_xformMatrix * a_Position;\n' +
+        '}\n'
+    var FSHADER_SOURCE = 'void main(){\n' +
+        'gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);\n' +
+        '}\n'
+
+    var angle = 90
+
+    logAction = (shader) => {
+        var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!compiled) {
+            var error = gl.getShaderInfoLog(shader);
+            console.log('Failed to compile shader: ' + error);
+            gl.deleteShader(shader);
+            return false;
+        }
+        return true
+    }
+
+    createContent = (canvas) => {
+        window.gl = null
+        gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+        if(!gl){
+            console.log('gl init failure')
+            return null
+        }
+
+        return gl
+    }
+
+    initShader = (VSHADER_SOURCE, FSHADER_SOURCE) => {
+        var program = createProgram(VSHADER_SOURCE, FSHADER_SOURCE)
+        if(!program){
+            console.log('program failure')
+            return false
+        }
+        gl.useProgram(program)
+        gl.program = program
+
+        return true
+    }
+
+    createProgram = (VSHADER_SOURCE, FSHADER_SOURCE) => {
+
+        var vertexShader = loadShader(gl.VERTEX_SHADER, VSHADER_SOURCE)
+        var fragmentShader = loadShader(gl.FRAGMENT_SHADER, FSHADER_SOURCE)
+        if(!vertexShader || !fragmentShader){
+            return false
+        }
+        var program = gl.createProgram()
+        gl.attachShader(program, vertexShader)
+        gl.attachShader(program, fragmentShader)
+        gl.linkProgram(program)
+        var linked = gl.getProgramParameter(program, gl.LINK_STATUS);
+        if (!linked) {
+            var error = gl.getProgramInfoLog(program);
+            console.log('Failed to link program: ' + error);
+            gl.deleteProgram(program);
+            gl.deleteShader(fragmentShader);
+            gl.deleteShader(vertexShader);
+            return false;
+        }
+
+        return program
+
+    }
+
+    loadShader = (type, source) => {
+        var shader = gl.createShader(type)
+        gl.shaderSource(shader, source)
+        gl.compileShader(shader)
+        var result = logAction(shader)
+        if(!result){
+            console.log('compile shader failure')
+            return false
+        }
+
+        return shader
+    }
+
+    initAction = () => {
+
+
+        var canvas = document.getElementById('webGl')
+
+        var gl = createContent(canvas)
+
+        if(!gl){
+            console.log('create failure ==')
+            return ''
+        }
+
+        if(!initShader(VSHADER_SOURCE, FSHADER_SOURCE)){
+            console.log('shader failure')
+            return false
+        }
+
+        var n = initVertexBuffer()
+        if(n < 0){
+            console.log('failure to vertex pointer')
+            return false
+        }
+
+        var radian = Math.PI * angle / 180.0; // Convert to radians
+        var cosB = Math.cos(radian), sinB = Math.sin(radian);
+
+        var xformMatrix = new Float32Array([
+            cosB, sinB, 0.0, 0.0,
+            -sinB, cosB, 0.0, 0.0,
+            0.0,  0.0, 1.0, 0.0,
+            0.0,  0.0, 0.0, 1.0
+        ]);
+
+        var mat = gl.getUniformLocation(gl.program, 'u_xformMatrix')
+        if (!mat) {
+            console.log('Failed to get the storage location of u_xformMatrix');
+            return false
+        }
+
+        gl.uniformMatrix4fv(mat, false, xformMatrix);
+        gl.clearColor(0, 0, 0, 1);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+    }
+
+    initVertexBuffer = () => {
+        var vertices = new Float32Array([
+            0, 0.5,   -0.5, -0.5,   0.5, -0.5
+        ]);
+
+        var vertexBuffer = gl.createBuffer()
+        if(!vertexBuffer){
+            console.log('vertex buffer create failure')
+            return -1
+        }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+        var position = gl.getAttribLocation(gl.program, 'a_Position')
+        if (position < 0) {
+            console.log('Failed to get the storage location of a_Position');
+            return -1;
+        }
+        gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(position);
+
+        return 3
+
+    }
+
+</script>
+</html>
