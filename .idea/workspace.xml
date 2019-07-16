@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0efc820e-c912-457a-bc24-d692977edebe" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/demo2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/demo2/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="0efc820e-c912-457a-bc24-d692977edebe" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
     <ignored path="$PROJECT_DIR$/tmp/" />
@@ -18,7 +16,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/learn10.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4000">
+            <state relative-caret-position="2862">
               <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
             </state>
           </provider>
@@ -27,7 +25,7 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/js/learn10_01.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3714">
+            <state relative-caret-position="650">
               <caret line="195" selection-start-line="195" selection-end-line="195" />
             </state>
           </provider>
@@ -79,23 +77,18 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
-              <item name="gl" type="b2602c69:ProjectViewProjectNode" />
-              <item name="gl" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="gl" type="b2602c69:ProjectViewProjectNode" />
-              <item name="gl" type="462c0819:PsiDirectoryNode" />
-              <item name="js" type="462c0819:PsiDirectoryNode" />
+              <item name="leanGL" type="b2602c69:ProjectViewProjectNode" />
+              <item name="leanGL" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -141,15 +134,16 @@
       <workItem from="1557993486879" duration="571000" />
       <workItem from="1557994629079" duration="9247000" />
       <workItem from="1558058604182" duration="9570000" />
+      <workItem from="1558319214499" duration="585000" />
+      <workItem from="1558403990364" duration="13000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="23699000" />
+    <option name="totallyTimeSpent" value="24297000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1408" height="828" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25522712" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -209,6 +203,14 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/learn10.html" />
+    <entry file="file://$PROJECT_DIR$/learn10_01.html" />
+    <entry file="file://$PROJECT_DIR$/js/learn10.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2862">
+          <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
@@ -217,21 +219,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/js/learn10.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4000">
-          <caret line="159" column="38" selection-start-line="159" selection-start-column="38" selection-end-line="159" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/js/learn10_01.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3714">
+        <state relative-caret-position="650">
           <caret line="195" selection-start-line="195" selection-end-line="195" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/learn10_01.html" />
   </component>
   <component name="masterDetails">
     <states>
