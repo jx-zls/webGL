@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>pointer_lock</title>
+</head>
+<body>
+
+    <script type="module">
+
+        import {
+        	Scene,
+            PerspectiveCamera,
+            Vector3,
+            Color,
+            Mesh,
+            WebGLRenderer,
+            BoxBufferGeometry,
+            PlaneBufferGeometry,
+            MeshLambertMaterial,
+            MeshBasicMaterial,
+            Raycaster,
+            HemisphereLight,
+			Float32BufferAttribute,
+			VertexColors,
+			MeshPhongMaterial
+        } from "../build/three.module.js";
+
+        import {
+        	PointerLockControls
+        } from "./jsm/controls/PointerLockControls.js";
+
+
+		var camera, scene, renderer, controls;
+
+		var objects = [];
+
+		var raycaster;
+		var moveForward = false;
+		var moveBackward = false;
+		var moveLeft = false;
+		var moveRight = false;
+		var canJump = false;
+
+		var prevTime = performance.now();
+		var velocity = new Vector3();
+		var direction = new Vector3();
+		var vertex = new Vector3();
+		var color = new Color();
+
+		init()
+        animate()
+
+		function init() {
+
+			camera = new PerspectiveCamera(45.0, window.innerWidth / window.innerHeight, 1.0, 1000)
+            scene = new Scene()
+            scene.background = new Color(0xf0f0f0)
+            renderer = new WebGLRenderer()
+            renderer.setPixelRatio(window.devicePixelRatio)
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            document.body.appendChild(renderer.domElement)
+
+			var light = new HemisphereLight(0xff000, 0x00ff00, 0.75 );
+			light.position.set( 0.5, 1, 0.75 );
+			scene.add( light );
+
+			raycaster = new Raycaster(new Vector3(), new Vector3(0, -1, 0), 0, 10)
+
+            var floorGeometry = new PlaneBufferGeometry(2000,2000,100,100)
+
+			var position = floorGeometry.attributes.position;
+			for ( var i = 0, l = position.count; i < l; i ++ ) {
+
+				vertex.fromBufferAttribute( position, i );
+				vertex.x += Math.random() * 20 - 10;
+				vertex.y += Math.random() * 2;
+				vertex.z += Math.random() * 20 - 10;
+
+				position.setXYZ( i, vertex.x, vertex.y, vertex.z );
+			}
+			floorGeometry = floorGeometry.toNonIndexed();
+            position = floorGeometry.attributes.position
+
+            var colors = []
+			for (var i = 0; i < position.count; i ++) {
+                color.setHSL(Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75)
+                colors.push(color.r, color.g, color.b)
+			}
+
+			floorGeometry.addAttribute('color', new Float32BufferAttribute( colors, 3 ))
+
+            var floorMaterial = new MeshBasicMaterial({vertexColors:VertexColors})
+            var floor = new Mesh(floorGeometry, floorMaterial)
+            scene.add(floor)
+
+            var boxGeometry = new BoxBufferGeometry(20, 20, 20)
+            boxGeometry = boxGeometry.toNonIndexed()
+
+            position = boxGeometry.attributes.position
+            colors = []
+
+			for (var i = 0; i < position; i ++) {
+				color.setHSL( Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+                colors.push(color.r, color.g, color.b)
+			}
+			boxGeometry.addAttribute('color', new Float32BufferAttribute(colors, 3))
+
+			for ( var i = 0; i < 500; i ++ ) {
+
+				var boxMaterial = new MeshPhongMaterial( { specular: 0xffffff, flatShading: true, vertexColors: VertexColors } );
+				boxMaterial.color.setHSL( Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75 );
+
+				var box = new Mesh( boxGeometry, boxMaterial );
+				box.position.x = Math.floor( Math.random() * 20 - 10 ) * 20;
+				box.position.y = Math.floor( Math.random() * 20 ) * 20 + 10;
+				box.position.z = Math.floor( Math.random() * 20 - 10 ) * 20;
+				scene.add( box );
+				objects.push( box );
+
+			}
+
+
+			controls = new PointerLockControls(camera)
+			scene.add( controls.getObject());
+            controls.lock()
+
+		}
+
+		function animate() {
+            requestAnimationFrame(animate)
+
+            if(controls.isLocked){
+            	raycaster.ray.origin.copy(controls.getObject().position)
+				raycaster.ray.origin.y -= 10
+
+                var intersections = raycaster.intersectObject(objects)
+                var onObject= intersections.length > 0
+				var time = performance.now();
+				var delta = ( time - prevTime ) / 1000;
+				velocity.x -= velocity.x * 10.0 * delta;
+				velocity.z -= velocity.z * 10.0 * delta;
+				velocity.y -= 9.8 * 100.0 * delta;
+				direction.z = Number( moveForward ) - Number( moveBackward );
+				direction.x = Number( moveLeft ) - Number( moveRight );
+				direction.normalize();
+				if ( moveForward || moveBackward ) velocity.z -= direction.z * 400.0 * delta;
+				if ( moveLeft || moveRight ) velocity.x -= direction.x * 400.0 * delta;
+
+				if ( onObject === true ) {
+
+					velocity.y = Math.max( 0, velocity.y );
+					canJump = true;
+
+				}
+				controls.getObject().translateX( velocity.x * delta );
+				controls.getObject().position.y += ( velocity.y * delta ); // new behavior
+				controls.getObject().translateZ( velocity.z * delta );
+
+				if ( controls.getObject().position.y < 10 ) {
+
+					velocity.y = 0;
+					controls.getObject().position.y = 10;
+
+					canJump = true;
+
+				}
+
+				prevTime = time;
+			}
+            renderer.render(scene, camera)
+		}
+
+    </script>
+
+</body>
+</html>

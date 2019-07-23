@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>control_map</title>
+</head>
+<body>
+
+
+        <script type="module">
+
+            import {
+            	PerspectiveCamera,
+                Scene,
+                Vector3,
+                Mesh,
+                BoxBufferGeometry,
+                MeshPhongMaterial,
+                DirectionalLight,
+                WebGLRenderer,
+                Clock,
+                Color,
+                FogExp2,
+                AmbientLight
+            } from "../build/three.module.js";
+
+            import {MapControls} from "./jsm/controls/MapControls.js";
+
+			var scene, camera, controls,renderer;
+
+            init()
+            animate()
+
+
+            function init() {
+                camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 1000)
+
+                camera.position.set(-500, 200, 100)
+                scene = new Scene()
+                scene.background = new Color(0xf0f0f0)
+                scene.fog = new FogExp2(0xcccccc, 0.002)
+
+                renderer = new WebGLRenderer()
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                renderer.setPixelRatio(window.devicePixelRatio)
+				document.body.appendChild( renderer.domElement );
+
+
+
+				controls = new MapControls(camera, renderer.domElement)
+                controls.enableDamping = true
+				controls.dampingFactor = 0.25;
+                //
+				controls.screenSpacePanning = false;
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+				controls.maxPolarAngle = Math.PI / 2;
+
+				var geometry = new BoxBufferGeometry(1,1,1)
+				geometry.translate( 0, 0.5, 0 );
+				var material = new MeshPhongMaterial( { color: 0xffffff, flatShading: true } );
+				for ( var i = 0; i < 500; i ++ ) {
+
+					var mesh = new Mesh( geometry, material );
+					mesh.position.x = Math.random() * 1600 - 800;
+					mesh.position.y = 0;
+					mesh.position.z = Math.random() * 1600 - 800;
+					mesh.scale.x = 20;
+					mesh.scale.y = Math.random() * 80 + 10;
+					mesh.scale.z = 20;
+					mesh.updateMatrix();
+					mesh.matrixAutoUpdate = false;
+					scene.add( mesh );
+
+				}
+
+				var light = new DirectionalLight(0xffffff)
+                light.position.set(1,1,1)
+                scene.add(light)
+
+                var light = new DirectionalLight(0x002233)
+                light.position.set(-1, -1, -1)
+                scene.add(light)
+
+                var light = new AmbientLight(0xcccccc)
+                scene.add(light)
+
+
+			}
+
+			function animate() {
+                requestAnimationFrame(animate)
+                renderer.render(scene, camera)
+                controls.update()
+			}
+
+
+        </script>
+
+</body>
+</html>

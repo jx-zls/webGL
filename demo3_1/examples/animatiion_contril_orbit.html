@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>orbitControl</title>
+</head>
+<body>
+
+
+    <script type="module">
+            import {
+            	Scene,
+                PerspectiveCamera,
+                CylinderBufferGeometry,
+                DirectionalLight,
+                Mesh,
+                MeshPhongMaterial,
+                WebGLRenderer,
+                Clock,
+                Color,
+                AmbientLight
+            } from "../build/three.module.js";
+            import {OrbitControls} from "./jsm/controls/OrbitControls.js";
+
+            var scene, camera, renderer,dirLight, controls;
+
+            var clock = new Clock()
+
+            init()
+            animate()
+
+            function init() {
+                camera = new PerspectiveCamera(45.0, window.innerWidth / window.innerHeight, 1.0, 1000)
+                camera.position.set(0, 0, 300)
+                scene = new Scene()
+                scene.background = new Color(0xf0f0f0)
+
+                // camera.lookAt(scene.position)
+
+                renderer = new WebGLRenderer()
+                renderer.setPixelRatio(window.devicePixelRatio)
+                renderer.setSize(window.innerWidth, window.innerHeight)
+                document.body.appendChild(renderer.domElement)
+
+                controls = new OrbitControls(camera, renderer.domElement)
+                controls.enableDamping = true
+				controls.dampingFactor = 0.25;
+				controls.screenSpacePanning = false;
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+				controls.maxPolarAngle = Math.PI / 2;
+
+
+				var geometry = new CylinderBufferGeometry(0, 10, 30, 4, 1)
+                var material = new MeshPhongMaterial({color:0xffffff, flatShading:true})
+
+				for (var i = 0; i < 500; i ++) {
+                    var mesh = new Mesh(geometry, material)
+                    mesh.position.x = Math.random() * 1800 - 600
+                    mesh.position.y = 0
+                    mesh.position.z = Math.random() * 1800 - 600
+                    mesh.updateMatrix()
+                    mesh.matrixAutoUpdate = false
+                    scene.add(mesh)
+				}
+
+				var light = new DirectionalLight(0xff0000)
+                light.position.set(1,1,1)
+                scene.add(light)
+                var light = new DirectionalLight(0x00ff00)
+                light.position.set(-1,-1,-1)
+                scene.add(light)
+
+                var ambitLight = new AmbientLight(0xcccccc)
+                scene.add(ambitLight)
+
+			}
+
+			function animate() {
+                var delta = clock.getDelta()
+                requestAnimationFrame(animate)
+                renderer.render(scene, camera)
+                controls.update()
+			}
+
+    </script>
+
+</body>
+</html>

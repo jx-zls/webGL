@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>animation_key</title>
+</head>
+<body>
+
+<script type="module">
+    import {
+    	AnimationMixer,
+        AnimationClip,
+        QuaternionKeyframeTrack,
+        Quaternion,
+        ColorKeyframeTrack,
+        NumberKeyframeTrack,
+        VectorKeyframeTrack,
+        Mesh,
+        Scene,
+        PerspectiveCamera,
+        Color,
+        BoxBufferGeometry,
+        MeshBasicMaterial,
+        Vector3,
+        Clock,
+        AxesHelper,
+		InterpolateDiscrete,
+        WebGLRenderer
+    } from "../build/three.module.js";
+
+    import {OrbitControls} from "./jsm/controls/OrbitControls.js";
+
+	var scene, camera, renderer, clock;
+    var mixer, controls;
+
+    init()
+    animate()
+
+    function init() {
+        scene = new Scene()
+        scene.background = new Color(0xfafafa)
+        clock = new Clock()
+
+        camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 1000)
+        camera.position.set(50, 50, 100)
+        camera.lookAt(scene.position)
+
+        var box_geo = new BoxBufferGeometry(5, 5, 5)
+        var box_mat = new MeshBasicMaterial({transparent:true, color:0xffffff})
+        var box_mesh = new Mesh(box_geo, box_mat)
+		scene.add(box_mesh)
+
+        var axes_helper = new AxesHelper(10)
+        scene.add(axes_helper)
+
+        var positionKF = new VectorKeyframeTrack('.position', [0, 1, 2], [0,0,0,30,0,0,0,0,0])
+        var scalKF = new VectorKeyframeTrack('.scale', [0,1,2], [1,1,1, 2,2,2, 1,1,1])
+
+        var xAxes = new Vector3(1,0,0)
+        var qIn = new Quaternion().setFromAxisAngle(xAxes, 0)
+        var qFi = new Quaternion().setFromAxisAngle(xAxes, Math.PI)
+
+        var quaternionKF = new QuaternionKeyframeTrack('.quaternion', [0,1,2], [qIn.x,qIn.y,qIn.z,qIn.w,qFi.x,qFi.y,qFi.z,qFi.w,qIn.x,qIn.y,qIn.z,qIn.w])
+        var colorKF = new ColorKeyframeTrack('.material.color', [0,1,2], [1,0,0,0,1,0,1,0,0], InterpolateDiscrete)
+        var opacityKF = new NumberKeyframeTrack('.material.opacity', [0,1,2], [1,0,1])
+
+        var clip = new AnimationClip('default', 3, [positionKF, scalKF, quaternionKF, colorKF, opacityKF])
+        mixer = new AnimationMixer(box_mesh)
+        var clipAction = mixer.clipAction(clip)
+        clipAction.play()
+
+        renderer = new WebGLRenderer()
+        renderer.setPixelRatio(window.devicePixelRatio)
+        renderer.setSize(window.innerWidth, window.innerHeight)
+        document.body.appendChild(renderer.domElement)
+
+		controls = new OrbitControls(camera, renderer.domElement)
+
+	}
+
+	function animate() {
+
+    	requestAnimationFrame(animate)
+        var delta = clock.getDelta()
+
+        if(mixer){
+        	mixer.update(delta)
+        }
+        renderer.render(scene, camera)
+	}
+
+</script>
+
+
+</body>
+</html>
