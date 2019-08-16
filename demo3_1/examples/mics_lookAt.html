@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>lookAt</title>
+</head>
+<body>
+
+    <script type="module">
+
+        import {
+        	Scene,
+            WebGLRenderer,
+            PerspectiveCamera,
+            Color,
+            CylinderBufferGeometry,
+            SphereBufferGeometry,
+            Mesh,
+            MeshNormalMaterial
+        } from "../build/three.module.js";
+
+
+		import Stats from './jsm/libs/stats.module.js';
+
+		var camera, scene, renderer, stats;
+
+		var sphere;
+
+		var mouseX = 0, mouseY = 0;
+
+		var windowHalfX = window.innerWidth / 2;
+		var windowHalfY = window.innerHeight / 2;
+
+
+
+		window.addEventListener('mousemove', onDocumentMouseMove, false)
+
+		function init() {
+
+			camera = new PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 15000)
+            camera.position.z = 3200
+
+            scene = new Scene()
+            scene.background = new Color(0xffffff)
+
+			sphere = new Mesh( new SphereBufferGeometry( 100, 20, 20 ), new MeshNormalMaterial() );
+			scene.add( sphere );
+
+			var geometry = new CylinderBufferGeometry( 0, 10, 100, 12 );
+			// geometry.rotateX( Math.PI / 2 );
+			var material = new MeshNormalMaterial();
+
+			for (var i = 0; i < 10; i ++) {
+
+				var mesh = new Mesh(geometry, material)
+                mesh.position.x = Math.random() * 4000 - 2000
+                mesh.position.y = Math.random() * 4000 - 2000
+                mesh.position.z = Math.random() * 4000 - 2000
+                scene.add(mesh)
+			}
+
+			renderer = new WebGLRenderer()
+            renderer.setPixelRatio(window.devicePixelRatio)
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            document.body.appendChild(renderer.domElement)
+
+		}
+
+		function onDocumentMouseMove( event ) {
+
+			mouseX = ( event.clientX - windowHalfX ) * 10;
+			mouseY = ( event.clientY - windowHalfY ) * 10;
+
+		}
+
+		function animate(){
+
+			requestAnimationFrame(animate)
+			render();
+        }
+
+        function render(){
+			var time = Date.now() * 0.0005;
+
+			sphere.position.x = Math.cos( time * 0.7 ) * 2000;
+			sphere.position.y = Math.sin( time * 0.5 ) * 2000;
+			sphere.position.z = Math.cos( time * 0.3 ) * 2000;
+
+			for ( var i = 1, l = scene.children.length; i < l; i ++ ) {
+
+				scene.children[ i ].lookAt( sphere.position );
+
+			}
+
+			camera.position.x += ( mouseX - camera.position.x ) * .05;
+			camera.position.y += ( - mouseY - camera.position.y ) * .05;
+			camera.lookAt( scene.position );
+
+			renderer.render( scene, camera );
+        }
+
+		init()
+        animate()
+
+
+    </script>
+
+</body>
+</html>

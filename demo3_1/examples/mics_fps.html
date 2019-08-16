@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <script type="module">
+        import {
+        	Scene,
+            WebGLRenderer,
+            Euler,
+			CubeTextureLoader,
+            RGBFormat,
+            PerspectiveCamera,
+            Raycaster,
+            Vector3,
+            Vector2,
+            Object3D,
+            ObjectLoader
+
+        } from "../build/three.module.js";
+
+        var motion = {
+        	position:new Vector3(),
+            velocity:new Vector3(),
+            rotation:new Vector2(),
+            spinning:new Vector2(),
+            airbone:false
+        }
+
+        motion.position.y = -150
+
+        console.log('motion ==', motion)
+
+        var renderer = new WebGLRenderer()
+		console.log('renderer ==', renderer)
+
+		renderer.setPixelRatio(window.devicePixelRatio)
+        document.body.appendChild(renderer.domElement)
+
+        var camera = new PerspectiveCamera(60, 1, 0.1, 9000)
+		console.log('camera ==', camera)
+
+		var scene = new Scene();
+		console.log('scene ==', scene)
+
+		var envMap = new CubeTextureLoader().load( [
+			'textures/cube/skybox/px.jpg', // right
+			'textures/cube/skybox/nx.jpg', // left
+			'textures/cube/skybox/py.jpg', // top
+			'textures/cube/skybox/ny.jpg', // bottom
+			'textures/cube/skybox/pz.jpg', // back
+			'textures/cube/skybox/nz.jpg' // front
+		] );
+		envMap.format = RGBFormat;
+
+		scene.background = envMap;
+
+		scene.add( makePlatform(
+			'models/json/platform/platform.json'
+		) );
+
+		function makePlatform( url ) {
+
+			var placeholder = new Object3D();
+            console.log('placeholder ==', placeholder)
+			var loader = new ObjectLoader();
+			loader.load( url, function ( platform ) {
+
+				placeholder.add( platform );
+			} );
+
+			return placeholder;
+		}
+
+		var updateCamera = (function () {
+            var euler = new Euler(0,0,0,'YXZ')
+			return function () {
+				euler.x = motion.rotation.x;
+				euler.y = motion.rotation.y;
+				camera.quaternion.setFromEuler( euler );
+
+				camera.position.copy( motion.position );
+
+				camera.position.y += 3.0;
+			};
+		})()
+
+        var applayPhysics = (function () {
+			var timeStep = 5;
+			var timeLeft = timeStep + 1;
+			var birdsEye = 100;
+			var kneeDeep = 0.4;
+			var raycaster = new Raycaster();
+			raycaster.ray.direction.set( 0, - 1, 0 );
+            var angles = new Vector2()
+            var displacement = new Vector3()
+
+            return function ( dt ) {
+                var platform = scene.getObjectByName('platform', true)
+                if(platform){
+                	timeLeft += dt
+
+                    dt = 5
+                    while (timeLeft >= dt){
+						var time = 0.3, damping = 0.93, gravity = 0.01, tau = 2 * Math.PI;
+						raycaster.ray.origin.copy(motion.position)
+						raycaster.ray.origin.y += birdsEye;
+						var hits = raycaster.intersectObject( platform );
+                        motion.airbone = true
+                        if(hits.length > 0 && hits[0].face.y > 0){
+							var actualHeight = hits[ 0 ].distance - birdsEye;
+							if ( ( motion.velocity.y <= 0 ) && ( Math.abs( actualHeight ) < kneeDeep ) ) {
+								motion.position.y -= actualHeight;
+								motion.velocity.y = 0;
+								motion.airbone = false;
+
+							}
+						}
+						if ( motion.airbone ) motion.velocity.y -= gravity;
+
+						angles.copy( motion.spinning ).multiplyScalar( time );
+						if ( ! motion.airbone ) motion.spinning.multiplyScalar( damping );
+
+						displacement.copy( motion.velocity ).multiplyScalar( time );
+						if ( ! motion.airbone ) motion.velocity.multiplyScalar( damping );
+
+						motion.rotation.add( angles );
+						motion.position.add( displacement );
+
+						// limit the tilt at ±0.4 radians
+
+						motion.rotation.x = Math.max( - 0.4, Math.min( + 0.4, motion.rotation.x ) );
+
+						// wrap horizontal rotation to 0...2π
+
+						motion.rotation.y += tau;
+						motion.rotation.y %= tau;
+
+						timeLeft -= dt;
+
+					} ;
+                }
+			}
+
+
+
+		})()
+
+        var jumpPads = (function () {
+
+			var pads = [ new Vector3( - 17.5, 8, - 10 ), new Vector3( 17.5, 8, - 10 ), new Vector3( 0, 8, 21 ) ];
+			var temp = new Vector3();
+			return function () {
+
+				if ( ! motion.airbone ) {
+
+					for ( var j = 0, n = pads.length; j < n; j ++ ) {
+
+						if ( pads[ j ].distanceToSquared( motion.position ) < 2.3 ) {
+							// calculate velocity towards another side of platform from jump pad position
+							temp.copy( pads[ j ] );
+							temp.y = 0;
+							temp.setLength( - 0.8 );
+							temp.y = 0.7;
+
+							motion.airbone = true;
+							motion.velocity.copy( temp );
+							break;
+
+						}
+
+					}
+
+				}
+
+			};
+
+
+		})()
+
+        var resetPlayer = function () {
+			if ( motion.position.y < - 123 ) {
+
+				motion.position.set( - 2, 7.7, 25 );
+				motion.velocity.multiplyScalar( 0 );
+
+			}
+		}
+
+		var keyboardControls = ( function () {
+
+			var keys = { SP: 32, W: 87, A: 65, S: 83, D: 68, UP: 38, LT: 37, DN: 40, RT: 39 };
+
+			var keysPressed = {};
+
+			( function ( watchedKeyCodes ) {
+
+				var handler = function ( down ) {
+					return function ( e ) {
+						var index = watchedKeyCodes.indexOf( e.keyCode );
+						if ( index >= 0 ) {
+							keysPressed[ watchedKeyCodes[ index ] ] = down;
+							e.preventDefault();
+						}
+					};
+				};
+				window.addEventListener( "keydown", handler( true ), false );
+				window.addEventListener( "keyup", handler( false ), false );
+
+			} )( [
+				keys.SP, keys.W, keys.A, keys.S, keys.D, keys.UP, keys.LT, keys.DN, keys.RT
+			] );
+
+			var forward = new Vector3();
+			var sideways = new Vector3();
+
+			return function () {
+
+				if ( ! motion.airbone ) {
+
+					// look around
+					var sx = keysPressed[ keys.UP ] ? 0.03 : ( keysPressed[ keys.DN ] ? - 0.03 : 0 );
+					var sy = keysPressed[ keys.LT ] ? 0.03 : ( keysPressed[ keys.RT ] ? - 0.03 : 0 );
+
+					if ( Math.abs( sx ) >= Math.abs( motion.spinning.x ) ) motion.spinning.x = sx;
+					if ( Math.abs( sy ) >= Math.abs( motion.spinning.y ) ) motion.spinning.y = sy;
+
+					// move around
+					forward.set( Math.sin( motion.rotation.y ), 0, Math.cos( motion.rotation.y ) );
+					sideways.set( forward.z, 0, - forward.x );
+
+					forward.multiplyScalar( keysPressed[ keys.W ] ? - 0.1 : ( keysPressed[ keys.S ] ? 0.1 : 0 ) );
+					sideways.multiplyScalar( keysPressed[ keys.A ] ? - 0.1 : ( keysPressed[ keys.D ] ? 0.1 : 0 ) );
+
+					var combined = forward.add( sideways );
+					if ( Math.abs( combined.x ) >= Math.abs( motion.velocity.x ) ) motion.velocity.x = combined.x;
+					if ( Math.abs( combined.y ) >= Math.abs( motion.velocity.y ) ) motion.velocity.y = combined.y;
+					if ( Math.abs( combined.z ) >= Math.abs( motion.velocity.z ) ) motion.velocity.z = combined.z;
+
+					//jump
+					var vy = keysPressed[ keys.SP ] ? 0.7 : 0;
+					motion.velocity.y += vy;
+
+				}
+
+			};
+
+		} )();
+
+
+
+		var start = function (gameLoop, gameViewportSize) {
+            var resize = function () {
+                var viewPort = gameViewportSize()
+                renderer.setSize(viewPort.width, viewPort.height)
+                camera.aspect = viewPort.width / viewPort.height
+                camera.updateProjectionMatrix()
+
+			}
+
+			window.addEventListener('resize', resize, false)
+            resize()
+
+            let lastTimeStamp;
+            var render = function (timeStamp) {
+				var timeElapsed = lastTimeStamp ? timeStamp - lastTimeStamp : 0;
+				lastTimeStamp = timeStamp;
+				gameLoop( timeElapsed );
+
+				renderer.render( scene, camera );
+				requestAnimationFrame( render );
+			}
+
+			requestAnimationFrame( render );
+		}
+
+		var gameViewportSize = function(){
+        	return {
+        		width: window.innerWidth,
+                height:window.innerHeight
+            }
+        }
+
+        var gameLoop = function(dt){
+			resetPlayer();
+			keyboardControls();
+			jumpPads();
+			applayPhysics( dt );
+			// updateCamera();
+        }
+
+		start( gameLoop, gameViewportSize );
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>sandbox</title>
+</head>
+<body>
+
+    <script type="module">
+
+        import {
+        	Scene,
+            PerspectiveCamera,
+            Mesh,
+            MeshLambertMaterial,
+            Color,
+            Float32BufferAttribute,
+            BufferGeometry,
+            Vector3,
+            Line,
+            LineBasicMaterial,
+            BoxBufferGeometry,
+			CatmullRomCurve3,
+			Sprite,
+			SpriteMaterial,
+			TextureLoader,
+			TorusKnotBufferGeometry,
+			VertexColors,
+            MeshBasicMaterial,
+            WebGLRenderer
+
+        } from "../build/three.module.js";
+
+		import { TrackballControls } from './jsm/controls/TrackballControls.js';
+		import { SoftwareRenderer } from './jsm/renderers/SoftwareRenderer.js';
+		import { GeometryUtils } from './jsm/utils/GeometryUtils.js';
+
+		var camera, controls, scene, renderer, stats;
+
+		var torus, cube, texCube;
+
+		var start = Date.now();
+
+        function init() {
+            camera = new PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000)
+            camera.position.z = 500
+
+            scene = new Scene()
+
+            renderer = new WebGLRenderer()
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            document.body.appendChild(renderer.domElement)
+
+			var torusGeometry = new TorusKnotBufferGeometry( 150, 5 );
+            var torusPositon = torusGeometry.attributes.position
+            var colors = []
+            var color = new Color()
+			for (var i = 0; i < torusPositon.length; i ++) {
+				color.setHex( Math.random() * 0xffffff );
+				colors.push( color.r, color.g, color.b );
+			}
+
+			torusGeometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+			var torusTexture = new MeshBasicMaterial({color:0x0000ff, vertexColors: VertexColors})
+            torus = new Mesh(torusGeometry, torusTexture)
+            scene.add(torus)
+
+            colors = []
+            var boxGeometry = new BoxBufferGeometry(200, 200, 200)
+			for (let i = 0; i < boxGeometry.attributes.position.count; i ++) {
+
+				color.setHex(Math.random() * 0xffffff)
+                colors.push(color.r, color.g, color.b)
+			}
+
+			boxGeometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+			cube = new Mesh( boxGeometry, new MeshBasicMaterial( { color: 0x00ff00, vertexColors: VertexColors } ) );
+			scene.position.set( 100, 0, 0 );
+			scene.add( cube );
+
+			var loader = new TextureLoader()
+            loader.load('textures/brick_diffuse.jpg', function ( texture ) {
+                texCube = new Mesh(boxGeometry, new MeshLambertMaterial({map:texture}))
+                texCube.position.set(-300, 0, 0)
+                scene.add(texCube)
+			})
+
+            var sprite = new Sprite(new SpriteMaterial({color:0xff0040}))
+            sprite.position.set(-100, 200, 0)
+            sprite.scale.set(100, 100, 1)
+            scene.add(sprite)
+
+            var textureloader = new TextureLoader()
+            textureloader.load('textures/sprite1.png', function ( texture ) {
+            	var texSprite = new Sprite(new  SpriteMaterial({map:texture, transparent:true}))
+                texSprite.scale.set(100, 100, 1)
+                texSprite.position.set( 100, 200, 0 );
+				scene.add(texSprite)
+			})
+
+			var hilbertPoints = GeometryUtils.hilbert3D( new Vector3( 0, 0, 0 ), 200.0, 1, 0, 1, 2, 3, 4, 5, 6, 7 );
+            var lineGeometry = new BufferGeometry()
+			var subdivisions = 6;
+			var vertices = []
+            colors = []
+			var point = new Vector3();
+			color.setHex( 0x88aaff );
+
+			var spline = new CatmullRomCurve3(hilbertPoints)
+
+			for ( var i = 0; i < hilbertPoints.length * subdivisions; i ++ ) {
+
+				var t = i / ( hilbertPoints.length * subdivisions );
+				spline.getPoint( t, point );
+
+				vertices.push( point.x, point.y, point.z );
+				colors.push( color.r, color.g, color.b );
+
+			}
+
+			lineGeometry.addAttribute('position', new Float32BufferAttribute(vertices, 3))
+            lineGeometry.addAttribute('color', new Float32BufferAttribute(colors, 3))
+
+			var material = new LineBasicMaterial( { opacity: 1, linewidth: 3, vertexColors: VertexColors } );
+			var line = new Line( lineGeometry, material );
+			line.scale.set( 0.5, 0.5, 0.5 );
+			line.position.set( 0, - 200, 0 );
+			scene.add( line );
+
+			// controls = new TrackballControls(camera, renderer.domElement)
+
+		}
+
+		function animate(){
+            requestAnimationFrame(animate)
+            render()
+        }
+
+        function render() {
+			var timer = Date.now() - start;
+
+			torus.position.y = Math.sin( timer * 0.002 ) * 150;
+			torus.rotation.x = timer * 0.0003;
+			torus.rotation.z = timer * 0.0002;
+
+			cube.rotation.x = timer * 0.0002;
+			cube.rotation.z = timer * 0.0003;
+
+			// texCube.rotation.x = timer * 0.0002;
+			// texCube.rotation.z = timer * 0.0003;
+
+			// controls.update();
+
+			renderer.render( scene, camera );
+
+        }
+
+		init()
+        animate()
+
+
+
+    </script>
+
+</body>
+</html>
