@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+
+    <script type="x-shader/x-vertex" id="vertexShader">
+         precision highp float;
+
+         uniform mat4 modelViewMatrix;
+         uniform mat4 projectionMatrix;
+
+         attribute vec3 position;
+         attribute vec3 offset;
+         attribute vec2 uv;
+         attribute vec4 orientation;
+
+         varying vec2 vUv;
+
+         vec3 applyQuaterationToVector(vec4 q, vec3 v){
+
+            return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+         }
+
+         void main(){
+
+            vec3 vPosition = applyQuaterationToVector(orientation, position);
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + vPosition, 1.0 );
+         }
+
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentShader">
+
+        precision highp float;
+
+        uniform sampler2D map;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			gl_FragColor = texture2D( map, vUv );
+
+		}
+
+    </script>
+
+    <script type="module">
+        import {
+        	Scene,
+            Mesh,
+            WebGLRenderer,
+            PerspectiveCamera,
+            Quaternion,
+            Vector4,
+            TextureLoader,
+            BoxBufferGeometry,
+            RawShaderMaterial,
+            InstancedBufferAttribute,
+            InstancedBufferGeometry,
+            Color
+        } from "../build/three.module.js";
+
+        var renderer, scene, camera, mesh;
+        var offsetAttribute, orientationAttribute;
+		var lastTime = 0;
+		var moveQ = new Quaternion( 0.5, 0.5, 0.5, 0.0 ).normalize();
+		var tmpQ = new Quaternion();
+		var currentQ = new Quaternion();
+
+		function init() {
+
+			scene = new Scene()
+            camera = new PerspectiveCamera(50, window.innerWidth/window.innerHeight, 1, 1000)
+            camera.position.z = 90
+            renderer = new WebGLRenderer()
+            renderer.setPixelRatio(window.devicePixelRatio)
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            document.body.appendChild(renderer.domElement)
+
+            var instance = 1
+			var bufferGeometry = new BoxBufferGeometry( 2, 2, 2 );
+			var geometry = new InstancedBufferGeometry();
+
+			geometry.index = bufferGeometry.index
+            geometry.attributes.position = bufferGeometry.attributes.position
+			geometry.attributes.uv = bufferGeometry.attributes.uv;
+
+			var offsets = []
+			var orientations = [];
+			var vector = new Vector4();
+			var x, y, z, w;
+
+			for (let i = 0; i < instance; i ++) {
+
+				x = Math.random() * 100 - 50;
+				y = Math.random() * 100 - 50;
+				z = Math.random() * 100 - 50;
+
+				vector.set( x, y, z, 0 ).normalize();
+				vector.multiplyScalar( 5 );
+				offsets.push( x + vector.x, y + vector.y, z + vector.z );
+
+				x = Math.random() * 2 - 1;
+				y = Math.random() * 2 - 1;
+				z = Math.random() * 2 - 1;
+				w = Math.random() * 2 - 1;
+
+				vector.set( x, y, z, w ).normalize();
+
+				orientations.push( vector.x, vector.y, vector.z, vector.w );
+
+			}
+
+			offsetAttribute = new InstancedBufferAttribute(new Float32Array(offsets), 3)
+            orientationAttribute = new InstancedBufferAttribute(new Float32Array(orientations), 4).setDynamic(true)
+
+            geometry.addAttribute('offset', offsetAttribute)
+            geometry.addAttribute('orientation', orientationAttribute)
+
+            var material = new RawShaderMaterial({
+				uniforms: {
+					map: { value: new TextureLoader().load( 'textures/crate.gif' ) }
+				},
+                vertexShader:document.getElementById('vertexShader').textContent,
+                fragmentShader:document.getElementById('fragmentShader').textContent
+            })
+
+			mesh = new Mesh( geometry, material );
+			scene.add( mesh );
+
+
+		}
+
+		function animate(){
+
+			requestAnimationFrame(animate)
+            var time = performance.now()
+            mesh.rotation.y = time * 0.00005
+			var delta = ( time - lastTime ) / 5000;
+			tmpQ.set( moveQ.x * delta, moveQ.y * delta, moveQ.z * delta, 1 ).normalize();
+
+			for ( var i = 0, il = orientationAttribute.count; i < il; i ++ ) {
+
+				currentQ.fromArray( orientationAttribute.array, ( i * 4 ) );
+				currentQ.multiply( tmpQ );
+
+				orientationAttribute.setXYZW( i, currentQ.x, currentQ.y, currentQ.z, currentQ.w );
+			}
+
+			orientationAttribute.needsUpdate = true;
+			lastTime = time;
+
+			renderer.render(scene, camera)
+
+        }
+
+
+
+		init()
+        animate()
+
+
+
+    </script>
+
+</body>
+</html>

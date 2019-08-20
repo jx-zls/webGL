@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+
+
+    <script type="module">
+        import {
+			AmbientLight,
+			BufferGeometry,
+			Color,
+			ExtrudeGeometry,
+			Float32BufferAttribute,
+			Geometry,
+			Mesh,
+			MeshPhongMaterial,
+			PerspectiveCamera,
+			PointLight,
+			Scene,
+			Shape,
+			Vector3,
+			VertexColors,
+			WebGLRenderer
+
+        } from "../build/three.module.js";
+
+		import { TrackballControls } from './jsm/controls/TrackballControls.js';
+
+		var camera, scene, renderer, controls, stats;
+
+
+		function init() {
+            renderer = new WebGLRenderer()
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            renderer.setPixelRatio(window.devicePixelRatio)
+            document.body.appendChild(renderer.domElement)
+
+            scene = new Scene()
+
+            camera = new PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000)
+            camera.position.z = 400
+            scene.add(camera)
+
+            controls = new TrackballControls(camera, renderer.domElement)
+            controls.minDistance = 100
+            controls.maxDistance = 800
+            controls.dynamicDampingFactor = 0.1
+
+			scene.add( new AmbientLight( 0xffffff, 0.2 ) );
+			var light = new PointLight( 0xffffff, 0.7 );
+			camera.add( light );
+
+			createScene()
+		}
+
+		function createGometry() {
+            var heartShape = new Shape()
+            var x = 0, y = 0
+			heartShape.moveTo( x + 25, y + 25 );
+			heartShape.bezierCurveTo( x + 25, y + 25, x + 20, y, x, y );
+			heartShape.bezierCurveTo( x - 30, y, x - 30, y + 35, x - 30, y + 35 );
+			heartShape.bezierCurveTo( x - 30, y + 55, x - 10, y + 77, x + 25, y + 95 );
+			heartShape.bezierCurveTo( x + 60, y + 77, x + 80, y + 55, x + 80, y + 35 );
+			heartShape.bezierCurveTo( x + 80, y + 35, x + 80, y, x + 50, y );
+			heartShape.bezierCurveTo( x + 35, y, x + 25, y + 25, x + 25, y + 25 );
+			var extrudeSettings = {
+				depth: 16,
+				bevelEnabled: true,
+				bevelSegments: 1,
+				steps: 2,
+				bevelSize: 1,
+				bevelThickness: 1
+			};
+
+			var geometry = new ExtrudeGeometry(heartShape, extrudeSettings)
+			geometry.rotateX( Math.PI );
+			geometry.scale( 0.4, 0.4, 0.4 );
+
+			console.log('shape ==', heartShape)
+            return geometry
+		}
+
+		function createScene() {
+            var bufferGeometry = new BufferGeometry()
+            var radius = 125
+            var count = 40
+			var positions = []
+			var normals = []
+			var colors = []
+
+			var vector = new Vector3()
+			var color = new Color( 0xffffff );
+			var heartGeometry = createGometry();
+			var geometry = new Geometry();
+			console.log('geometry ==', geometry)
+
+			for (var i = 1; i < count; i ++) {
+				var phi = Math.acos( - 1 + ( 2 * i ) / count );
+				var theta = Math.sqrt( count * Math.PI ) * phi
+				vector.setFromSphericalCoords( radius, phi, theta );
+				geometry.copy( heartGeometry );
+				geometry.lookAt( vector );
+				geometry.translate( vector.x, vector.y, vector.z );
+				color.setHSL( ( i / count ), 1.0, 0.7 );
+                geometry.faces.forEach(function ( face ) {
+					positions.push( geometry.vertices[ face.a ].x );
+					positions.push( geometry.vertices[ face.a ].y );
+					positions.push( geometry.vertices[ face.a ].z );
+					positions.push( geometry.vertices[ face.b ].x );
+					positions.push( geometry.vertices[ face.b ].y );
+					positions.push( geometry.vertices[ face.b ].z );
+					positions.push( geometry.vertices[ face.c ].x );
+					positions.push( geometry.vertices[ face.c ].y );
+					positions.push( geometry.vertices[ face.c ].z );
+
+					normals.push( face.normal.x );
+					normals.push( face.normal.y );
+					normals.push( face.normal.z );
+					normals.push( face.normal.x );
+					normals.push( face.normal.y );
+					normals.push( face.normal.z );
+					normals.push( face.normal.x );
+					normals.push( face.normal.y );
+					normals.push( face.normal.z );
+
+					colors.push( color.r );
+					colors.push( color.g );
+					colors.push( color.b );
+					colors.push( color.r );
+					colors.push( color.g );
+					colors.push( color.b );
+					colors.push( color.r );
+					colors.push( color.g );
+					colors.push( color.b );
+
+				})
+			}
+
+			bufferGeometry.addAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+			bufferGeometry.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+			bufferGeometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+			var material = new MeshPhongMaterial( { shininess: 80, vertexColors: VertexColors } );
+			var mesh = new Mesh( bufferGeometry, material );
+			scene.add( mesh );
+		}
+
+		function animate(){
+			requestAnimationFrame(animate)
+            controls.update()
+            renderer.render(scene, camera)
+        }
+
+		init()
+		animate()
+
+
+    </script>
+
+</body>
+</html>

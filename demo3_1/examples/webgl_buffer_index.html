@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>index</title>
+</head>
+<body>
+
+    <script type="module">
+
+        import {
+        	Scene,
+            WebGLRenderer,
+            Mesh,
+            PlaneBufferGeometry,
+            MeshPhongMaterial,
+            PerspectiveCamera,
+			DoubleSide,
+            VertexColors,
+			BufferGeometry,
+			Float32BufferAttribute,
+            Color,
+			HemisphereLight,
+			AmbientLight,
+			CircleBufferGeometry,
+			MeshBasicMaterial,
+            BoxBufferGeometry
+        } from "../build/three.module.js";
+
+        import {OrbitControls} from "./jsm/controls/OrbitControls.js";
+
+		var scene, renderer, camera, controls;
+        var planeMesh;
+
+        function init() {
+            scene = new Scene()
+            scene.background = new Color(0xffffff)
+
+			var light = new HemisphereLight();
+			// scene.add( light );
+            scene.add(new AmbientLight(0xffffff))
+
+
+            renderer = new WebGLRenderer()
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            renderer.setPixelRatio(window.devicePixelRatio)
+            document.body.appendChild(renderer.domElement)
+
+            camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1.0, 500)
+            camera.position.z = 50
+
+            var geometry = new BufferGeometry()
+
+            var indices = []
+            var normals = []
+            var positions = []
+            var colors = []
+
+            var size = 20
+            var segment = 10
+            var halfSize = size / 2
+            var segmengSize = size / segment
+
+			for (var i = 0; i <= segment; i ++) {
+                var y = (i * segmengSize) - halfSize
+				for (var j = 0; j <= segment; j ++) {
+                    var x = (j * segmengSize) - halfSize
+                    positions.push(x, -y, 0)
+                    normals.push(0, 0, 1)
+					var r = ( x / size ) + 0.5;
+					var g = ( y / size ) + 0.5;
+					colors.push(r, g, 1)
+				}
+			}
+			console.log('colors ==', colors)
+
+			for (var i = 0; i < segment; i ++) {
+				for (var j = 0; j < segment; j ++) {
+                    var a = i * (segment + 1) + (j + 1)
+                    var b = i * (segment + 1) + j
+                    var c = (i + 1) * (segment + 1) + j
+                    var d = (i + 1) * (segment + 1) + (j + 1)
+
+                    indices.push(a, b, d)
+                    indices.push(b, c, d)
+				}
+			}
+
+			geometry.setIndex(indices)
+
+			geometry.addAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+			geometry.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
+			geometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+            var material = new MeshPhongMaterial({
+                side:DoubleSide,
+                vertexColors:VertexColors
+            })
+
+            planeMesh = new Mesh(geometry, material)
+
+            // scene.add(planeMesh)
+
+            controls = new OrbitControls(camera, renderer.domElement)
+
+
+			var geometry = new CircleBufferGeometry( 5, 32 );
+            console.log('geo ==', geometry)
+			var material = new MeshBasicMaterial( { color: 0xffff00, side:DoubleSide } );
+			var circle = new Mesh( geometry, material );
+			scene.add( circle );
+
+			var box = new Mesh(new BoxBufferGeometry(2,2,2), new MeshBasicMaterial({color:0xff0000}))
+            console.log('box ==', box)
+            scene.add(box)
+
+		}
+
+
+		function animate() {
+        	var time = Date.now() * 0.01
+            requestAnimationFrame(animate)
+            // planeMesh.rotation.y = time * 0.25
+            // planeMesh.rotation.x = time * 0.25
+            controls.update()
+            renderer.render(scene, camera)
+		}
+
+		init()
+        animate()
+
+
+
+
+    </script>
+
+</body>
+</html>
